@@ -1,6 +1,6 @@
 """Optional real-browser smoke test. Uses installed Chrome/Edge and Python stdlib.
 
-Run directly: py -3 test_browser.py. Only an in-memory database is used.
+Run: py -3 -m tests.test_browser. Only an in-memory database is used.
 """
 import base64
 import json
@@ -18,6 +18,7 @@ from urllib.parse import urlparse
 
 import server as game
 import adventures
+from tests import ROOT
 
 
 class DevTools:
@@ -106,7 +107,7 @@ def main():
             port=active.read_text().splitlines()[0]
             with urllib.request.urlopen(f'http://127.0.0.1:{port}/json/version') as response:info=json.load(response)
             control=DevTools(info['webSocketDebuggerUrl'])
-            output=Path('artifacts');output.mkdir(exist_ok=True)
+            output=ROOT/'artifacts';output.mkdir(exist_ok=True)
             def screenshot(p,name):
                 (output/name).write_bytes(base64.b64decode(p.call('Page.captureScreenshot',format='png',captureBeyondViewport=True)['data']))
             def page(width=1280):
@@ -118,6 +119,9 @@ def main():
                 p.call('Page.navigate',url=base);p.wait("!!document.querySelector('#setup-form')")
                 return p
             a=page();b=page(390)
+            motion=a.evaluate((ROOT/'tests'/'flight_motion_checks.js').read_text(encoding='utf-8'))
+            print('PASS: smooth flight frames, duplicate snapshots, bounded stalls, collision and reset '+str(motion),flush=True)
+            assert b.evaluate("getComputedStyle(document.querySelector('#join-tab')).touchAction==='manipulation'"),'Setup taps can trigger double-tap zoom'
             assert b.evaluate('document.documentElement.scrollWidth<=innerWidth'), 'Mobile setup overflows'
             assert a.evaluate("[...document.querySelectorAll('[data-avatar]')].every(b=>{const r=document.createRange();r.selectNodeContents(b);const x=r.getBoundingClientRect(),y=b.getBoundingClientRect();return Math.abs(x.left+x.width/2-y.left-y.width/2)<1;})"), 'Avatar centering'
             a.evaluate("document.querySelector('#name').value='Alex';document.querySelector('#city').value='Mexico City, Mexico';document.querySelector('#setup-form button[type=submit]').click()")
@@ -163,6 +167,8 @@ def main():
             screenshot(b,'bridge-mobile.png')
             chapter(3)
             for p in [a,b]:p.wait("document.querySelectorAll('[data-star]').length===8")
+            assert b.evaluate("getComputedStyle(document.querySelector('[data-star]')).touchAction==='manipulation' && getComputedStyle(document.querySelector('#adventure-board')).touchAction==='manipulation'"),'Star taps can trigger double-tap zoom'
+            assert b.evaluate("!document.querySelector('meta[name=viewport]').content.includes('user-scalable=no')"),'Page pinch zoom disabled'
             a.click('[data-star="0"]');b.click('[data-star="4"]')
             a.wait("document.querySelectorAll('.star-chart svg path').length===1")
             assert b.evaluate('document.documentElement.scrollWidth<=innerWidth'),'Mobile stars overflow'

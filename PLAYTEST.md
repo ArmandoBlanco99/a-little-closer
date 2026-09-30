@@ -2,6 +2,8 @@
 
 Use two people, two iPhones, and a new room. Record the iPhone model and iOS/browser version for each person. Automated Chromium checks do not establish Safari compatibility or how enjoyable the games feel.
 
+Follow-up from the first phone test: chat and postcard were reported okay. Retest Paper Plane with continuous steering and rapid repeated taps on direction/star buttons; motion should be smoother and taps should not zoom the page. Pinch zoom should still work outside the map and held flight controls. Stop any old server and restart with `make lan` or the Windows launcher after the folder reorganization.
+
 ## Connect locally
 
 Start `start-windows.bat` and leave its terminal open. Both phones must use the same Wi-Fi and open `http://COMPUTER-LAN-IP:ACTUAL-PORT`, using the port printed by the launcher. Create the room on one phone and join from the other. Use city-center coordinates if a city is absent from the list.

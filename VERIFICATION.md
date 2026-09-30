@@ -6,12 +6,20 @@ Recorded September 30, 2026 on Windows, Python 3.12.10 and installed Chrome 153.
 
 | Check | Evidence and limits |
 | --- | --- |
-| Server/state/HTTP regression suite | `py -3 -m unittest -v test_game.py test_adventures.py`: 23 passing tests. Both editions' complete state journeys, private clues, movement/physics, gate cooperation, incorrect guesses, duplicate/stale actions, old lantern holds, admission, expiry, persistence and HTTP/SSE. |
+| Server/state/HTTP regression suite | `make test`: 24 passing tests. Both editions' complete state journeys, private clues, movement/physics, gate cooperation, incorrect guesses, duplicate/stale actions, old lantern holds, admission, expiry, persistence, HTTP/SSE, and the reorganized default database/asset paths. |
 | Windows startup | Regression covers permission-error fallback to an OS-assigned port, actual ephemeral binding, and matching printed/browser-open URLs. Browser tests start actual local HTTP servers. This does not diagnose the original Windows port restriction or alter network settings. |
-| Browser smoke suite | `py -3 test_browser.py`: passing. Two seats, keyboard and simulated touch, mobile widths, bridge SVGs, constellation reveal/confirmation, map controls, refresh, real page departure/resume, practice, no captured JavaScript errors. Selects chapters directly; intercepts postcard download to inspect rendering. |
-| Complete UI journey | `py -3 test_journey.py`: passing. Two real-time flights with swapped roles, all three lantern trails, all three bridge crossings, and all three constellation reveals through UI controls, without chapter injection or clock changes. Checks invalid city input, third-seat rejection, chat/unread/focus, repeated submissions, wrong star guesses, chapter distance reductions, actual page disconnect, server-process restart with saved progress/chat, and matching 1600 x 1100 PNG files downloaded from both seats. No captured JavaScript errors or server tracebacks. |
+| Browser smoke suite | `py -3 -m tests.test_browser`: passing. Two seats, keyboard and simulated touch, mobile widths, bridge SVGs, constellation reveal/confirmation, map controls, refresh, real page departure/resume, practice, no captured JavaScript errors. Selects chapters directly; intercepts postcard download to inspect rendering. |
+| Complete UI journey | `py -3 -m tests.test_journey`: passing. Two real-time flights with swapped roles, all three lantern trails, all three bridge crossings, and all three constellation reveals through UI controls, without chapter injection or clock changes. Checks invalid city input, third-seat rejection, chat/unread/focus, repeated submissions, wrong star guesses, chapter distance reductions, actual page disconnect, server-process restart with saved progress/chat, and matching 1600 x 1100 PNG files downloaded from both seats. No captured JavaScript errors or server tracebacks. |
 | Visual review | Synthetic screenshots of the mobile flight/bridge, desktop boards, and Unicode postcard reviewed. Portrait controls, map collapse, SVG levers, chat access, focus outlines, and full souvenir city names are visible. |
-| Source control exclusions | `git check-ignore` confirms database/sidecars, environment files, Python caches, virtual environments, and artifacts are ignored. No remote configured. |
+| Source control exclusions | `git check-ignore` confirms database/sidecars, environment files, Python caches, virtual environments, and artifacts are ignored. Origin is the user's `ArmandoBlanco99/a-little-closer` repository. |
+
+## Phone feedback and follow-up
+
+The user tested on phones over the same Wi-Fi and reported chat and postcard working, the other levels running well, flight looking laggy, and repeated taps zooming the page. This is user-reported device evidence, not an automated Safari run.
+
+The follow-up adds frame-by-frame flight smoothing with at most 120 ms prediction, duplicate-snapshot handling, stall bounds, collision correction and reset coverage. Deterministic browser checks observed 55 changing vertical frames in a 60-frame run (maximum step about 4.34 pixels), rather than only moving at server tick boundaries. This measures the rendering algorithm, not physical iPhone frame rate. Browser checks also verify the touch-action policy and that pinch zoom remains enabled. Both fixes still need an iPhone retest.
+
+The Makefile help, local/LAN commands and test targets were exercised. GitHub Actions is configured for Windows/Linux and two Python versions plus Chromium browser journeys; its first hosted run remains pending publication. Local tests ran on Windows/Python 3.12.
 
 ## Changes from this pass
 
@@ -24,9 +32,9 @@ Recorded September 30, 2026 on Windows, Python 3.12.10 and installed Chrome 153.
 
 ## Still needs people/devices
 
-- Two physical iPhones running Safari: touch comfort, software keyboard, audio activation, dynamic viewport/text sizing, background/lock recovery, actual Files/Photos saving, and the native share sheet over HTTPS.
+- Physical iPhone retest of flight and rapid taps; explicit checks of software keyboard, audio activation, dynamic viewport/text sizing, background/lock recovery, and native sharing over HTTPS. The user already reported chat and postcard okay during LAN play.
 - A timed two-person playtest: the proposed 12–18 minutes and difficulty/enjoyment are not established by scripted completion. Follow [PLAYTEST.md](PLAYTEST.md).
 - Public hosting and separate-network testing. The user chose a public link for anyone, with two iPhones as the primary test devices. No service has been provisioned or published.
-- A chosen GitHub repository before publication. The local checkpoint does not publish game data or source online.
+- Review the first hosted CI run after pushing the reorganized source to the configured repository. Game data stays ignored.
 
 Automated Chromium screenshots and pointer events are not evidence of physical Safari compatibility. Exports can render fonts/emoji differently between operating systems; the shared souvenir details should remain consistent.

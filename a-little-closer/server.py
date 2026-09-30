@@ -17,6 +17,8 @@ from urllib.parse import urlparse, parse_qs
 
 ROOT = Path(__file__).resolve().parent
 PUBLIC = ROOT / 'public'
+# Preserve existing local rooms when updating from the original flat layout.
+DEFAULT_DB = ROOT.parent / 'rooms.sqlite3'
 SYMBOLS = ['Sun', 'Moon', 'Leaf', 'Heart', 'Flower', 'Cloud']
 STARS = ['Luna', 'Nova', 'Sol', 'Vega', 'Lyra', 'Orion']
 LOCK = threading.RLock()
@@ -412,14 +414,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--host',default='0.0.0.0')
     parser.add_argument('--port',type=int,default=8080)
-    parser.add_argument('--db',default=str(ROOT/'rooms.sqlite3'))
+    parser.add_argument('--db',default=str(DEFAULT_DB))
     parser.add_argument('--open-browser',action='store_true')
     parser.add_argument('--auto-port',action='store_true',help='Choose an available port if the requested one is blocked or occupied.')
     args = parser.parse_args()
     try:
         server = bind_server(args.host, args.port, args.auto_port)
     except OSError as exc:
-        parser.exit(1, f'Cannot start the local server: {exc}\nTry: py -3 server.py --host 127.0.0.1 --port 0 --open-browser\nIf that also fails, check Windows network/security restrictions for Python.\n')
+        parser.exit(1, f'Cannot start the local server: {exc}\nTry: py -3 a-little-closer/server.py --host 127.0.0.1 --port 0 --open-browser\nIf that also fails, check Windows network/security restrictions for Python.\n')
     init_db(args.db)
     threading.Thread(target=watchdog,daemon=True).start()
     server.daemon_threads = True

@@ -10,17 +10,52 @@ A real two-player cooperative browser game. No npm packages, API keys, or extern
 
 If Python is not installed, install Python 3 from https://www.python.org/downloads/ and run the launcher again.
 
+## Developer commands and layout
+
+From the repository root, use `make help` to list commands. GNU Make selects `py -3` on Windows and `python3` elsewhere; override with `PYTHON=python` if needed. Make is optional: the launchers and Python commands below still work without it.
+
+| Command | Purpose |
+| --- | --- |
+| `make run` | Start for this computer and open the browser. |
+| `make lan` | Listen on all interfaces for phones on the same Wi-Fi. |
+| `make test` | Server/state and HTTP tests. |
+| `make test-browser` | Browser controls, rendering, touch and flight smoothing checks. |
+| `make test-journey` | Complete two-player browser journey and actual downloads. |
+| `make check` | Run all three test suites sequentially. |
+
+Use `make lan PORT=55018` to request a port; if unavailable, read the actual port printed by the server.
+
+```text
+a-little-closer/          # Repository root
+  a-little-closer/        # Application code
+    server.py
+    adventures.py
+    public/              # Bundled browser code and assets
+  tests/                 # Server and browser tests
+  .github/workflows/      # GitHub Actions checks
+  Makefile
+  start-windows.bat
+  start-mac-linux.sh
+  README.md
+  DEVELOPMENT.md
+  DEPLOYMENT.md
+  PLAYTEST.md
+  VERIFICATION.md
+```
+
+After updating from the old flat layout, stop the old server and restart with the launcher or `make lan`. Saved rooms remain in the ignored repository-root `rooms.sqlite3`; this reorganization does not relocate or reset them. Run browser tests as modules (`python -m tests.test_browser`), not as standalone test files.
+
 ## Start on macOS / Linux
 
 Open a terminal in the extracted folder and run:
 
 ```sh
-python3 server.py --auto-port --open-browser
+python3 a-little-closer/server.py --auto-port --open-browser
 ```
 
 Then open the URL printed in the terminal (normally **http://localhost:8080**). Stop the server with Ctrl+C.
 
-If port 8080 is already occupied, run `python3 server.py --port 8081` and use http://localhost:8081 instead (on Windows use `py -3`).
+If port 8080 is already occupied, run `python3 a-little-closer/server.py --port 8081` and use http://localhost:8081 instead (on Windows use `py -3`).
 
 ## Test both players on one computer
 
@@ -81,7 +116,7 @@ This is a small local development server, not a production hosting configuration
 Run the server/state and HTTP integration tests:
 
 ```sh
-python3 -m unittest -v test_game.py test_adventures.py
+python3 -m unittest discover -s tests -t . -v
 ```
 
 On Windows use `py -3` in place of `python3`. Tests use isolated temporary SQLite databases. They cover both editions' full journeys, level solvability, private clues, flight physics and roles, gates and levers, practice, retries, duplicate actions, admission, persistence, and HTTP/SSE.
@@ -89,39 +124,42 @@ On Windows use `py -3` in place of `python3`. Tests use isolated temporary SQLit
 Optional browser smoke checks use an installed Chrome/Edge with an isolated temporary profile and an in-memory game database:
 
 ```sh
-py -3 test_browser.py
+py -3 -m tests.test_browser
 ```
 
 These check two player sessions, keyboard/touch controls, mobile layout, map interaction, reconnect, practice, and postcard rendering. The smoke test selects chapters directly and intercepts the download; use the full journey check for uninterrupted gameplay and actual file saving:
 
 ```sh
-py -3 test_journey.py
+py -3 -m tests.test_journey
 ```
 
 The full check drives two browser seats through all four chapters against a separate server with a disposable SQLite database. It checks chapter distance reductions, chat, admission, a real disconnection and server restart, and matching PNG downloads from both seats. Allow several minutes. Synthetic screenshots and postcards are written to `artifacts/`.
 
-See [VERIFICATION.md](VERIFICATION.md) for recorded results and limits. Physical iPhone/Safari audio, keyboard, saving/sharing, and a timed two-person playtest remain manual checks; use [PLAYTEST.md](PLAYTEST.md). The souvenir uses kilometres and UTC consistently for both players, even if a player changes the on-screen distance to miles.
+See [VERIFICATION.md](VERIFICATION.md) for results and limits. The user tested on phones and reported chat and postcard working; flight smoothness and repeated-tap zoom fixes need an iPhone retest. Audio, native HTTPS sharing and session timing still need specific confirmation; use [PLAYTEST.md](PLAYTEST.md). The souvenir uses kilometres and UTC consistently for both players, even if a player changes the on-screen distance to miles.
+
+GitHub Actions runs the regression suite on Windows/Linux with Python 3.10/3.12, and the browser suites on Ubuntu with Chrome. The workflow needs its first remote run after pushing these changes.
 
 ## Files
 
-- `server.py`: HTTP/SSE server and authoritative game logic.
-- `adventures.py`: second-edition flight simulation, garden, bridge, and star rules.
-- `public/app.js`: client UI, controls, geographic map, and postcard renderer.
-- `public/adventures.js`: new chapter rendering and input controls.
-- `public/journey-map.js`: interactive map and postcard map rendering.
-- `public/cities.js`: bundled city-center lookup.
-- `public/style.css`: responsive interface.
-- `public/adventures.css`: chapter boards and interactive map styling.
-- `public/mobile-ui.js` and `public/mobile.css`: mobile chat, compact map/boards, touch targets, and focus styling.
-- `public/world.geojson`: Natural Earth land geometry.
-- `test_game.py`: functional and integration tests.
-- `test_adventures.py`: revised chapter solvability and regression tests.
-- `test_browser.py`: optional real-browser smoke checks, no package installation needed.
-- `test_journey.py`: complete browser journey, real server recovery, and actual postcard downloads.
+- `a-little-closer/server.py`: HTTP/SSE server and authoritative game logic.
+- `a-little-closer/adventures.py`: second-edition flight simulation, garden, bridge, and star rules.
+- `a-little-closer/public/app.js`: client UI, controls, geographic map, and postcard renderer.
+- `a-little-closer/public/adventures.js`: new chapter rendering and input controls.
+- `a-little-closer/public/flight-motion.js`: bounded visual prediction and smooth server corrections.
+- `a-little-closer/public/journey-map.js`: interactive map and postcard map rendering.
+- `a-little-closer/public/cities.js`: bundled city-center lookup.
+- `a-little-closer/public/style.css`: responsive interface.
+- `a-little-closer/public/adventures.css`: chapter boards and interactive map styling.
+- `a-little-closer/public/mobile-ui.js` and `a-little-closer/public/mobile.css`: mobile chat, compact map/boards, touch targets, and focus styling.
+- `a-little-closer/public/world.geojson`: Natural Earth land geometry.
+- `tests/test_game.py`: functional and integration tests.
+- `tests/test_adventures.py`: revised chapter solvability and regression tests.
+- `tests/test_browser.py`: optional real-browser smoke checks, no package installation needed.
+- `tests/test_journey.py`: complete browser journey, real server recovery, and actual postcard downloads.
 
 ## Map attribution
 
 Made with Natural Earth. Free vector and raster map data at naturalearthdata.com. Public domain land geometry, 1:110m resolution, sourced from https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_land.geojson.
 
 ## Continuing in VS Code
-Open this folder with File → Open Folder. Read `DEVELOPMENT.md` for project context and the Windows startup fix. The source has a local Git checkpoint on `main`; `.gitignore` excludes local game data and credentials. No remote is configured or published yet.
+Open this folder with File → Open Folder. Read `DEVELOPMENT.md` for project context and the Windows startup fix. The configured origin is [ArmandoBlanco99/a-little-closer](https://github.com/ArmandoBlanco99/a-little-closer). `.gitignore` excludes local game data and credentials. Hosting options and the recommendation are in [DEPLOYMENT.md](DEPLOYMENT.md); a GitHub repository by itself does not host this multiplayer server.

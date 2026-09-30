@@ -2,8 +2,8 @@
 cd /d "%~dp0"
 where py >nul 2>nul
 if %errorlevel% equ 0 (
-  py -3 server.py --auto-port --open-browser
+  py -3 a-little-closer/server.py --auto-port --open-browser
 ) else (
-  python server.py --auto-port --open-browser
+  python a-little-closer/server.py --auto-port --open-browser
 )
 pause

@@ -1,8 +1,10 @@
+import { FlightMotion } from './flight-motion.js';
+const flightMotion=new FlightMotion();
 const titles=['Paper Plane Delivery','Lantern Trails','Bridge Maze','Our Constellation'];
 const counts=[2,3,3,3];
 const emoji={fox:'🦊',rabbit:'🐰',bear:'🐻',cat:'🐱'};
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let current=null, sceneKey='', repeat=null, animation=null, transport=null, lastFrame=0, received=0;
+let current=null, sceneKey='', repeat=null, animation=null, transport=null;
 const $=s=>document.querySelector(s);
 const me=()=>current.players.findIndex(p=>p.id===current.me);
 const allowed=()=>current?.phase==='playing'&&!current.paused&&!!$('#adventure-board');
@@ -18,7 +20,7 @@ async function control(action,extra={}){
 }
 function stopInput(){clearInterval(repeat);repeat=null;if(allowed()&&current.adventure.kind==='plane'&&isPilot())transport('steer',{value:0});}
 export function releaseAdventureInput(){stopInput();}
-export function clearAdventure(){clearInterval(repeat);repeat=null;cancelAnimationFrame(animation);animation=null;current=null;sceneKey='';}
+export function clearAdventure(){clearInterval(repeat);repeat=null;cancelAnimationFrame(animation);animation=null;flightMotion.reset();current=null;sceneKey='';}
 window.addEventListener('blur',stopInput);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)stopInput();});
 window.addEventListener('keydown',e=>{
@@ -70,7 +72,7 @@ function mount(s,el,send){
       b.onpointerup=b.onpointercancel=b.onlostpointercapture=()=>{clearInterval(repeat);repeat=null;};
       $('#flight-shield').onclick=()=>control('shield');
     }
-    const loop=t=>{if(!$('#flight-canvas'))return;if(t-lastFrame>15){drawFlight(t);lastFrame=t;}animation=requestAnimationFrame(loop);};
+    const loop=t=>{if(!$('#flight-canvas'))return;drawFlight(t);animation=requestAnimationFrame(loop);};
     animation=requestAnimationFrame(loop);
   }else if(a.kind==='garden'||a.kind==='bridge'){
     $('#adventure-controls').innerHTML=directions()+(a.bridge?'<button class="quiet" id="turn-bridge">↻ Turn bridge</button>':'')+'<p class="hint">Arrow keys / WASD or tap a direction. Focus the board for keyboard play.</p>';
@@ -84,8 +86,8 @@ export function renderAdventure(s,el,send){
   if(key!==sceneKey||!$('#adventure-board')){
     clearAdventure();current=s;transport=send;sceneKey=key;mount(s,el,send);
   }else current=s;
-  received=performance.now();
   const a=s.adventure,idx=me();
+  if(a.kind==='plane')flightMotion.accept(a,performance.now(),s.relaxed?48:66);
   if(a.kind==='stars'&&a.complete){
     $('#continue-stars').disabled=a.continued[idx];
     $('#continue-stars').textContent=a.continued[idx]?'Waiting for your partner…':s.step===2?'Celebrate our journey':'Continue together';
@@ -152,7 +154,8 @@ function bridgeGrid(a,s){
 function drawFlight(now){
   const canvas=$('#flight-canvas');if(!canvas||!current)return;
   const a=current.adventure,g=canvas.getContext('2d');
-  const delta=a.running?Math.min(.12,(now-received)/1000):0,x=a.x+delta*(current.relaxed?48:66),screenX=v=>v-x+120;
+  const motion=flightMotion.sample(now);if(!motion)return;
+  const delta=motion.ahead,x=motion.x,y=motion.y,screenX=v=>v-x+120;
   const sceneryX=reducedMotion.matches?0:x,decorativeTime=reducedMotion.matches?0:now;
   const gradient=g.createLinearGradient(0,0,0,400);gradient.addColorStop(0,'#19354e');gradient.addColorStop(1,'#d6a28a');g.fillStyle=gradient;g.fillRect(0,0,720,400);
   g.fillStyle='#ffdfac';g.beginPath();g.arc(605-sceneryX*.025,75,29,0,Math.PI*2);g.fill();
@@ -168,8 +171,8 @@ function drawFlight(now){
     else{g.fillStyle='#64737d';g.strokeStyle='#b6b7b0';g.lineWidth=2;g.beginPath();for(let j=0;j<7;j++){const angle=j/7*Math.PI*2,r=j%2?27:33;const xx=px+Math.cos(angle)*r,yy=o.y+Math.sin(angle)*r;j?g.lineTo(xx,yy):g.moveTo(xx,yy);}g.closePath();g.fill();g.stroke();}
   }
   g.fillStyle='#fff4d7';for(const b of a.bullets){g.beginPath();g.ellipse(screenX(b.x)+delta*360,b.y,8,3,0,0,Math.PI*2);g.fill();}
-  if(a.shield>0){g.fillStyle='#bfece42e';g.strokeStyle='#c7fff0';g.lineWidth=3;g.beginPath();g.arc(120,a.y,43,0,Math.PI*2);g.fill();g.stroke();}
-  g.save();g.translate(120,a.y);if(a.immune)g.globalAlpha=reducedMotion.matches ? .65 : .55+.3*Math.sin(now/65);
+  if(a.shield>0){g.fillStyle='#bfece42e';g.strokeStyle='#c7fff0';g.lineWidth=3;g.beginPath();g.arc(120,y,43,0,Math.PI*2);g.fill();g.stroke();}
+  g.save();g.translate(120,y);if(a.immune)g.globalAlpha=reducedMotion.matches ? .65 : .55+.3*Math.sin(now/65);
   g.shadowColor='#132b44';g.shadowBlur=10;g.fillStyle='#fff5db';g.beginPath();g.moveTo(39,0);g.lineTo(-29,-19);g.lineTo(-17,1);g.lineTo(-29,20);g.closePath();g.fill();g.shadowBlur=0;
   g.strokeStyle='#ba9a7c';g.lineWidth=1.5;g.beginPath();g.moveTo(39,0);g.lineTo(-17,1);g.lineTo(-7,14);g.stroke();g.restore();
   const finish=screenX(a.length);if(finish<760){g.fillStyle='#ffe0a3';g.fillRect(finish,0,3,400);g.font='34px sans-serif';g.fillText('✉',finish+15,205);}

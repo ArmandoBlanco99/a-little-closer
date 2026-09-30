@@ -12,6 +12,12 @@ import server as game
 
 
 class GameTests(unittest.TestCase):
+    def test_layout_preserves_default_database_and_bundled_assets(self):
+        from tests import ROOT, APP
+        self.assertEqual(game.DEFAULT_DB, ROOT/'rooms.sqlite3')
+        self.assertEqual(game.PUBLIC, APP/'public')
+        self.assertTrue((game.PUBLIC/'flight-motion.js').is_file())
+
     def test_startup_prints_and_opens_actual_bound_url(self):
         httpd = Mock(server_address=('127.0.0.1', 54321))
         with patch('sys.argv', ['server.py', '--auto-port', '--open-browser']), \

@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import adventures
 import server as game
-import test_game
+from tests import test_game
 
 
 class AdventureTests(unittest.TestCase):

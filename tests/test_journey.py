@@ -1,6 +1,6 @@
 """Full UI journey against a separate, restartable server and disposable database.
 
-Run: py -3 test_journey.py (installed Chrome/Edge required, about 3 minutes).
+Run: py -3 -m tests.test_journey (installed Chrome/Edge required, about 3 minutes).
 Only observes browser snapshots; all gameplay actions go through UI controls.
 No chapter injection, clock changes, database edits, or download interception.
 """
@@ -18,9 +18,9 @@ import tempfile
 import time
 import urllib.request
 
-from test_browser import DevTools
+from tests.test_browser import DevTools
+from tests import ROOT, APP
 
-ROOT = Path(__file__).resolve().parent
 DIRECTIONS = {'up': (0, -1), 'down': (0, 1), 'left': (-1, 0), 'right': (1, 0)}
 CLUES = ['the left star in the top row', 'the right star in the top row',
          'the far-left star in the middle row', 'the center star in the middle row',
@@ -142,7 +142,7 @@ def main():
             sock.bind(('127.0.0.1', 0)); port = sock.getsockname()[1]
         base = f'http://127.0.0.1:{port}'
         def start_server():
-            proc = subprocess.Popen([sys.executable, '-u', str(ROOT/'server.py'), '--host', '127.0.0.1',
+            proc = subprocess.Popen([sys.executable, '-u', str(APP/'server.py'), '--host', '127.0.0.1',
                 '--port', str(port), '--db', str(temp/'test.sqlite3')], cwd=ROOT,
                 stdout=server_log, stderr=subprocess.STDOUT,
                 creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
