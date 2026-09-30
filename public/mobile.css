@@ -1,0 +1,39 @@
+/* Keep the board and conversation within reach on a small screen. */
+.chat-toggle,.map-toggle,.trail-tabs{display:none}
+.chat-dialog{border:0;border-radius:20px;background:var(--cream);color:var(--ink);padding:18px;width:min(96vw,520px);max-height:90vh;max-height:90dvh;overflow:auto}
+.chat-dialog::backdrop{background:#102c42b3}
+.chat-dialog-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.chat-dialog-heading h2{font-size:24px}
+.chat-dialog .chat{border:0;padding:0;min-height:0;background:none}
+.chat-dialog .chat>h3{display:none}
+.chat-dialog .chat-log{height:35vh;height:35dvh;min-height:70px}
+.chat-open{overflow:hidden}
+.hint,.note,.board-legend,.quiet-link{color:#536860}
+.adventure-board:focus-visible,.map:focus-visible{outline:3px solid #da9350}
+.chart-star{min-width:44px}
+.couple.reacting span{animation:companion-greeting .65s ease-in-out 2}
+.couple.reacting span:nth-child(2){color:#a24659;text-shadow:0 0 18px #eeb7a1;animation-delay:.12s}
+@keyframes companion-greeting{50%{transform:translateY(-12px) rotate(-6deg)}}
+@media(max-width:680px){
+  main{padding-bottom:90px}
+  input,.chat-form input{font-size:16px}
+  .chat-toggle{display:block;position:fixed;bottom:max(16px,env(safe-area-inset-bottom));right:16px;z-index:9;background:var(--gold);box-shadow:0 3px 14px #18344735}
+  .sidebar #chat-home{display:none}
+  .is-playing .map-toggle{display:block;margin:12px 18px}
+  .is-playing .journey:not(.map-expanded) .interactive-map{display:none}
+  .is-playing .journey h2{font-size:23px}
+  .is-playing .journey small{font-size:11px}
+  .is-playing .stamp{border:0;padding:0;font-size:9px}
+  .is-playing .stamps{margin-bottom:13px}
+  .is-playing .puzzle-head{flex-wrap:wrap;gap:8px}
+  .is-playing .puzzle-head .role{max-width:none}
+  .trail-tabs{display:flex;gap:8px;margin-bottom:12px}
+  .trail-tabs button{flex:1;padding:8px;font-size:13px}
+  .trail-tabs button[aria-pressed=true]{background:var(--ink);color:var(--cream)}
+  .trail-charts[data-view=own]>section:nth-child(2),.trail-charts[data-view=partner]>section:first-child{display:none}
+  .direction-pad{grid-template-rows:repeat(2,46px)}
+  .direction-pad button,.map-tools button,.quick button,.quiet-link{min-height:44px;min-width:44px}
+  .person p{overflow-wrap:anywhere}
+  #toast{bottom:80px}
+}
+@media(prefers-reduced-motion:reduce){.couple.reacting span{animation:none}}
