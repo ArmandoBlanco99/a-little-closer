@@ -3,7 +3,17 @@
 ## Goal
 A Little Closer is a real-time, two-player cooperative web game for long-distance couples. Each enters a name, city, and avatar and joins using a six-character room code. Four cooperative minigames progressively close the displayed city-to-city distance. Victory includes an interactive celebration and downloadable postcard.
 
-## Current implementation
+## Netlify version
+
+The user selected Netlify Free, with four cooperative chapters and the shared ending. Production uses the single standard function at `netlify/functions/game.ts`, helpers in `a-little-closer/netlify/`, and a strongly consistent site-wide Blobs store with conditional ETag writes. Browser transport is selected at build time: local Python uses SSE; Netlify calls `/.netlify/functions/game` directly with bounded polling. No redirects or custom function paths.
+
+Edit frontend source in `a-little-closer/public/`. The `dist/` folder is generated and replaced by each build.
+
+On Windows, Make uses the portable Node 22 installation under `.tools/` when present and adds it to child-process PATH. Otherwise it uses the installed `npm.cmd`; other platforms use `npm`. The portable runtime is excluded from the upload ZIP. Uploading the already generated ZIP requires no local Node installation.
+
+Run `npm ci`, `npm test`, `npm run build`, `npm run test:package`, and `python -m tests.test_journey --netlify` to verify. `npm run package` creates the source ZIP for signed-in Netlify Drop builds. Node 22.12+ in the 22.x line is required for developer builds, not for users uploading the ZIP. Helpers and test-emulator adaptations must never enter the browser publish folder. Keep both rule implementations covered when changing gameplay. See DEPLOYMENT.md for expiry, costs, architecture, and hosted-test limits.
+
+## Local Python implementation
 The core loop exists in Python 3.10+ standard library and plain browser JavaScript. No packages, API keys, or external services are required. SQLite is authoritative; HTTP actions mutate state and SSE delivers role-specific snapshots. This was chosen to make local testing easy. React/TypeScript and Supabase were discussed for a future hosted version, but are not implemented dependencies.
 
 Application paths below are relative to `a-little-closer/`; all test files live in `tests/`. Run commands from the repository root. Root launchers and Makefile remain the entry points. The ignored default database remains at repository-root `rooms.sqlite3`, including when launched from another working directory; do not move an active database.
@@ -57,10 +67,10 @@ The intended aesthetic is an illustrated twilight travel scrapbook, animal avata
 ## GitHub and deployment
 .gitignore excludes rooms.sqlite3 (names, city choices, chat, session tokens), Python caches, environments and secrets. Keep real game data out of source control. The configured origin is `https://github.com/ArmandoBlanco99/a-little-closer.git`, with `main` tracking `origin/main`. Do not force-push or overwrite the remote.
 
-A GitHub repository stores the source. GitHub Pages alone cannot run the current Python/SQLite/SSE server. Multiplayer internet deployment needs a server-capable host with persistence, or a deliberate move to the originally proposed hosted backend. Current code is a local development server, not a production deployment.
+A GitHub repository stores the source. GitHub Pages alone cannot run the current Python/SQLite/SSE server. Multiplayer internet deployment needs a server-capable host with persistence, or a deliberate move to the originally proposed hosted backend. The Python code remains a local development server. The separate Netlify function is the production deployment target.
 
 The user wants anyone to be able to open a public link, and both primary testers use iPhones. Deployment discussion follows local readiness: compare keeping the Python backend with a managed backend, including HTTPS, persistent rooms, live connections, reconnects, public traffic limits, data retention, and current costs. Do not provision services until the hosting approach is selected. Then test using two separate networks.
 
-DEPLOYMENT.md compares ChatGPT Sites, Netlify and Render. The recommendation is a single Python web service with persistent SQLite storage for the initial audience; neither suggested course platform runs this Python server unchanged. Hosting has not been selected or provisioned.
+DEPLOYMENT.md now describes the selected Netlify Free migration and upload package. This supersedes the earlier paid Python-host recommendation. No service has been provisioned or published.
 
 Room snapshots never include another player's token or private clue. Preserve that boundary. No accounts, individual scoring, lives, hard deadlines, or built-in voice/video are planned for this prototype. Date on souvenirs is UTC for now.

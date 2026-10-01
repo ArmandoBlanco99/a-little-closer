@@ -1,5 +1,28 @@
 # Local verification
 
+## Netlify migration — September 30, 2026
+
+The deployment target now preserves four cooperative chapters and the shared ending, as requested. No competitive scoring or individual winner was added.
+
+| Check | Result |
+| --- | --- |
+| Serverless rules and storage contract | `npm test`: 7 passing tests. Complete two-player journey, both solo practice flights, shared completion data, private clues/tokens, concurrent admission/actions, deduplication, conflict retries, missing-ETag rejection, validation, expiry, authoritative flight timing, disconnect and cold-instance recovery. |
+| Production build | `npm run build`: browser assets in `dist` and one standard `game` function packaged by Netlify's official bundler, targeting Node 22. No custom route or redirect. |
+| Actual function archive | `npm run test:package`: extracted compiled function invoked with the real Blobs SDK and disposable official local storage. Concurrent ready/chat actions and saved data after a runtime restart pass. Production browser code calls `/.netlify/functions/game` directly. |
+| Upload ZIP | Fresh extraction, `npm ci`, production build, and packaged-function checks all pass. The archive contains 45 source files with root configuration and lockfile; no dependencies, saves, caches, logs, or generated output. Its files match the workspace source. |
+| Full production browser journey | `py -3 -m tests.test_journey --netlify`: passing. Two browser seats drive both flights, all three lantern trails, all three bridge mazes and all three constellation reveals through UI controls. Checks third-seat rejection, Unicode profiles, chat, chapter progress, genuine page departure and server restart, and identical 1600 x 1100 postcards downloaded by both players. No captured browser errors. |
+| Local Python compatibility | 24 regression tests and the Chrome browser smoke suite pass after the shared frontend transport extraction. Existing local SQLite data is untouched. |
+
+Build environment: Windows, Node 22.23.3, Python 3.12.10, Chrome 153. Dependencies are locked in `package-lock.json`. Test data is synthetic. Netlify screenshots and downloaded postcards are under ignored `artifacts/netlify/`.
+
+The Blobs SDK filesystem emulator does not make its check/write sequence atomic and omits GET ETags. The test-only adapter serializes individual storage requests and supplies the emulator's listed ETag. Function requests remain concurrent. The application also fails closed when a version is missing; atomic-store tests independently exercise conflicts. These checks do not substitute for hosted Netlify concurrency/latency testing.
+
+The first complete browser attempts hit a DevTools timeout during repeated flight clicks. The final run explicitly returns a primitive from that automation expression and completes all chapters. No game progress is injected and the real-time clock is not accelerated in the browser test.
+
+Netlify has not been provisioned or deployed. The first public upload still needs a two-network iPhone playtest, especially flight latency, background recovery, rapid taps, audio, and native HTTPS sharing. Free-plan capacity and a monthly play count have not been measured.
+
+## Earlier local readiness checks
+
 Readiness work for the approved revised journey. Test data is synthetic; the real `rooms.sqlite3` is not used by these checks.
 
 Recorded September 30, 2026 on Windows, Python 3.12.10 and installed Chrome 153.0.8010.54. Browser automation uses isolated profiles and the Python standard library, with no installed test packages.

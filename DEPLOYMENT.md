@@ -1,31 +1,44 @@
-# Hosting decision
+# Netlify deployment
 
-Recommendation for this version: one Python web service on Render, with persistent storage for SQLite. This keeps the frontend, actions, and live event streams on one origin, and preserves the existing game rules. It still needs production preparation before opening to public traffic.
+The selected deployment is **Netlify Functions + Netlify Blobs**, using Netlify Free for initial light use. Follow [UPLOAD-TO-NETLIFY.md](UPLOAD-TO-NETLIFY.md) to upload the complete `netlify-ready-game.zip` while signed in. No Git connection, local commands, entered secrets, or manual database setup is required to publish. Netlify's current [Drop quickstart](https://docs.netlify.com/start/quickstarts/netlify-drop-quickstart/) supports source ZIPs and performs builds for signed-in uploads.
 
-Between the two course suggestions, Netlify is the better fit for a GitHub-first frontend workflow **with a separate game backend**. Neither is an unchanged deployment of this Python process.
+## What is deployed
 
-| Option | Fit for the current game | Work required |
-| --- | --- | --- |
-| ChatGPT Sites | Managed hosting with supported app runtime, D1 structured storage, and R2 files. Official guidance describes static sites through full-stack JavaScript/TypeScript apps. | Port/adapt the Python room rules, simulation loop, persistence and live-session coordination. Validate that hosting pattern before promising multiplayer reliability. |
-| Netlify | Can host the HTML/CSS/JS frontend. Its request functions use ephemeral execution; streaming functions have a 60-second limit. | Keep an independent long-running backend, or redesign the authoritative game loop and state storage. A frontend-only deploy will display setup but cannot create multiplayer rooms. |
-| Render web service + disk | Python runtime and a persistent filesystem fit the existing room server. | Prepare production HTTP serving, host/port configuration, graceful shutdown, bounded connections/requests, backups, and public load checks. Keep a single authoritative process for this edition. |
+- `netlify.toml` selects `npm run build`, `dist`, and `netlify/functions`.
+- `netlify/functions/game.ts` is the only function. It uses the standard Request/Response API and automatically supplied Netlify Blobs credentials.
+- `a-little-closer/netlify/` holds the authoritative rules and storage service. Helpers are outside the function directory.
+- The production build copies bundled browser assets into `dist` and selects the Netlify transport. The frontend calls `/.netlify/functions/game` directly. There is no custom function path or API redirect.
+- A site-wide store preserves rooms across function cold starts and new deployments. Strong reads obtain ETags; conditional writes use `onlyIfNew` for creation and `onlyIfMatch` for updates. Conflicts re-read and re-evaluate actions, with bounded retries and deduplicated action IDs. Missing storage versions fail closed.
 
-Sources checked September 30, 2026: [Sites](https://learn.chatgpt.com/docs/sites), [Sites application scope](https://learn.chatgpt.com/use-cases/build-and-deploy-internal-apps), [Netlify Functions](https://docs.netlify.com/build/functions/overview/), [streaming limits](https://docs.netlify.com/build/functions/api/), [Render web services](https://render.com/docs/web-services), [persistent disks](https://render.com/docs/disks).
+See the official [Functions API](https://docs.netlify.com/build/functions/api/) and [Blobs API](https://docs.netlify.com/build/data-and-storage/netlify-blobs/).
 
-## Budget and tradeoffs
+## Gameplay and operating limits
 
-Render lists its small 512 MB paid web-service compute at $7/month and persistent disks at $0.25/GB/month. On the $0 Hobby workspace plan, a small service with a 1 GB disk would therefore start around **$7.25/month**, before taxes, bandwidth/build overages, and optional domains. Confirm current pricing before purchase. Free web services cannot attach persistent disks, so they are not the recommended home for these saved rooms. [Pricing](https://render.com/pricing), [cost guide](https://render.com/articles/how-much-does-cloud-application-hosting-cost-for-small-businesses).
+All four cooperative chapters remain: two paper-plane flights, three lantern trails, three bridge mazes, and three constellation reveals followed by the shared ending. There is no competitive score or individual winner. This follows the user's choice instead of the course template's three-round competitive example.
 
-A disk supports one service instance and prevents zero-downtime deployments. The current in-memory room coordinator also assumes one process; adding workers or replicas without redesign would split live state. For an initially small public audience, this is simpler than a backend migration. Larger traffic would require measured capacity planning and a shared authoritative room service. [Disk limitations](https://render.com/docs/disks).
+There is no continuously running production server or timer. Requests advance flight physics using elapsed server time in bounded steps; client positions, timestamps, and completion claims are ignored. Browsers poll faster during flight and more slowly elsewhere, with only one state poll in flight per player. The existing visual smoothing remains. A flight gap over two seconds or missing player heartbeat pauses play; both players choose Ready to resume. This avoids runaway movement during interruptions but cannot guarantee the same latency as a nearby Python server.
 
-Sites is in beta with plan-specific usage limits. A separate Netlify frontend would add a second hosting configuration and require careful routing/authentication for the live backend. These are viable choices if the course requires one of them, but not reasons by themselves to rewrite a working game.
+Rooms allow two seats, random bearer tokens, private role-specific snapshots, bounded messages/action history, and limited create/join attempts per IP. Rooms expire after 24 hours without activity. The next access replaces an expired room with a tombstone that removes personal fields. This is access expiry, not scheduled deletion: untouched old rooms and hashed admission counters remain in storage. The site owner can remove stored data in Netlify. Names, locations, chat, and tokens never enter the upload ZIP.
 
-## After the hosting choice
+Netlify Free currently includes 300 credits per month and pauses projects when the allowance is exhausted. Builds, requests, compute, and storage-related use must stay within applicable plan limits. Flight polling consumes more requests than a static website. No production load capacity or free monthly play count has been established. [Free plan explanation](https://www.netlify.com/pricing/personal-vs-free/).
 
-1. Prepare the selected production server while keeping game logic and private clues covered by tests.
-2. Bind `0.0.0.0` to the host-provided port, place the database on persistent storage, keep credentials/data out of Git, and define retention/backups.
-3. Check HTTPS, live-stream buffering/timeouts, request/connection limits, room admission and restart recovery. Measure capacity before promising public scale.
-4. Connect the GitHub repository and provision only the selected services and budget.
-5. Test a complete room with one iPhone on Wi-Fi and the other on cellular, including flight responsiveness, reconnect, and postcard sharing over HTTPS.
+## Developer checks (optional; not needed to publish)
 
-No hosting service has been provisioned as part of this repository reorganization.
+With Node 22.12+ in the 22.x line:
+
+```text
+npm ci
+npm test
+npm run build
+npm run test:package
+python -m tests.test_journey --netlify
+npm run package
+```
+
+The build invokes Netlify's official function bundler as well as preparing the static frontend. Package checks unpack that actual archive and invoke its compiled game entrypoint with Netlify's SDK and disposable local Blobs storage. The official filesystem emulator needs a test-only adapter for atomic storage operations and missing GET ETags; this adapter is not deployed. Production uses Netlify directly. Concurrency is also covered independently by the atomic store tests.
+
+The Python backend and root launchers remain available for offline/LAN development and existing SQLite saves. They are included as source in the project ZIP but are not deployed or run by Netlify. The production publish directory contains only browser assets. Online rooms are separate from local saves.
+
+## First hosted check
+
+No site has been provisioned or deployed from this workspace. After upload, verify that the build succeeds, the `game` function is listed, and the link is public. Play the complete journey with one iPhone on Wi-Fi and the other on cellular; check flight responsiveness, repeated taps, chat, background/resume, and postcard download/sharing over HTTPS. Local Chromium tests do not establish Safari behavior or hosted Blobs latency.

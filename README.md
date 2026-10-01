@@ -1,6 +1,16 @@
-# A Little Closer — playable local prototype
+# A Little Closer
 
-A real two-player cooperative browser game. No npm packages, API keys, or external database are required. Requires **Python 3.10 or newer**. All game assets are bundled and work offline once downloaded.
+A two-player cooperative browser game with four chapters and a shared postcard. All artwork, styles, and browser assets are bundled.
+
+## Publish free on Netlify
+
+Sign in to Netlify Free, open [Netlify Drop](https://app.netlify.com/drop), and upload **netlify-ready-game.zip**. Netlify builds the project and supplies its function and Blobs storage. See [UPLOAD-TO-NETLIFY.md](UPLOAD-TO-NETLIFY.md) for the short walkthrough and usage limits. No GitHub connection, terminal commands, keys, environment-variable entry, or manual database setup is needed to publish.
+
+The source is organized under `a-little-closer/`; the single function entrypoint is `netlify/functions/game.ts`, and tests are in `tests/`. Root `package.json`, lockfile, and `netlify.toml` define the deployment. Developer commands: `npm ci`, `make build`, `make test-netlify`, `make test-netlify-journey`, and `make package` (Node 22.12+ in the 22.x line). Hosted latency and physical iPhone verification remain part of the first deployment test.
+
+## Play locally
+
+The original local/LAN version requires **Python 3.10 or newer**, with no additional Python packages. Existing SQLite saves remain local and are not uploaded to Netlify.
 
 ## Start on Windows
 
@@ -22,6 +32,10 @@ From the repository root, use `make help` to list commands. GNU Make selects `py
 | `make test-browser` | Browser controls, rendering, touch and flight smoothing checks. |
 | `make test-journey` | Complete two-player browser journey and actual downloads. |
 | `make check` | Run all three test suites sequentially. |
+| `make build` | Build the Netlify frontend and function archive. |
+| `make test-netlify` | Build and test the serverless rules and actual function archive. |
+| `make test-netlify-journey` | Complete browser journey against the packaged function. |
+| `make package` | Build, check, and create the complete Netlify upload ZIP. |
 
 Use `make lan PORT=55018` to request a port; if unavailable, read the actual port printed by the server.
 
@@ -31,9 +45,15 @@ a-little-closer/          # Repository root
     server.py
     adventures.py
     public/              # Bundled browser code and assets
+    netlify/             # Serverless rules and storage helpers
+  netlify/functions/     # Single game.ts entrypoint
+  scripts/               # Build, function verification, ZIP packaging
   tests/                 # Server and browser tests
   .github/workflows/      # GitHub Actions checks
   Makefile
+  netlify.toml
+  package.json
+  package-lock.json
   start-windows.bat
   start-mac-linux.sh
   README.md
@@ -137,7 +157,7 @@ The full check drives two browser seats through all four chapters against a sepa
 
 See [VERIFICATION.md](VERIFICATION.md) for results and limits. The user tested on phones and reported chat and postcard working; flight smoothness and repeated-tap zoom fixes need an iPhone retest. Audio, native HTTPS sharing and session timing still need specific confirmation; use [PLAYTEST.md](PLAYTEST.md). The souvenir uses kilometres and UTC consistently for both players, even if a player changes the on-screen distance to miles.
 
-GitHub Actions runs the regression suite on Windows/Linux with Python 3.10/3.12, and the browser suites on Ubuntu with Chrome. The workflow needs its first remote run after pushing these changes.
+GitHub Actions runs the regression suite on Windows/Linux with Python 3.10/3.12, and the browser suites on Ubuntu with Chrome. A separate Netlify job builds and checks the function and full browser journey. The workflow needs its first remote run after pushing these changes.
 
 ## Files
 
