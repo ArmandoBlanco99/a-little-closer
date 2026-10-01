@@ -10,3 +10,9 @@ venv/
 .DS_Store
 Thumbs.db
 artifacts/
+node_modules/
+.netlify/
+.tools/
+dist/
+*.log
+netlify-ready-game.zip

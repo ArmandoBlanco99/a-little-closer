@@ -1,0 +1,23 @@
+{
+  "name": "a-little-closer",
+  "version": "2.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test tests/netlify/*.test.mjs",
+    "test:package": "node scripts/check-package.mjs",
+    "package": "node scripts/package.mjs"
+  },
+  "dependencies": {
+    "@netlify/blobs": "11.1.2"
+  },
+  "devDependencies": {
+    "@netlify/zip-it-and-ship-it": "16.2.3",
+    "fflate": "0.8.3",
+    "prettier": "3.9.9"
+  }
+}

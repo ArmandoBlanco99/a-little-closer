@@ -1,3 +1,4 @@
+import { gameRequest, subscribe } from './transport.js';
 import { cities } from './cities.js';
 import { renderAdventure, clearAdventure, releaseAdventureInput } from './adventures.js';
 import { setupMobileUI, closeMobileUI, incomingMessages } from './mobile-ui.js';
@@ -31,7 +32,7 @@ fetch('/world.geojson').then(r=>r.json()).then(data=>{world=data;setGeography(da
 function renderSetup(){
   app.innerHTML=`<section class="setup"><div class="intro"><div><div class="eyebrow">Different cities. Same little adventure.</div><h1>A world between you.<br>A little closer,<br>together.</h1><p>Trade clues, light the way, and turn the miles into a memory for two.</p></div><div id="intro-map">${mapSvg([{lat:19.4326,lon:-99.1332,avatar:'fox',city:'Mexico City'},{lat:40.4168,lon:-3.7038,avatar:'rabbit',city:'Madrid'}])}</div><div class="intro-bottom"><div><strong>2 players</strong>One shared journey</div><div><strong>4 chapters</strong>No rush. No lives.</div><div><strong>1 keepsake</strong>A moment to save</div></div></div><div class="setup-form"><div class="tabs" aria-label="Room setup"><button id="create-tab" class="${mode==='create'?'active':''}">Create a room</button><button id="join-tab" class="${mode==='join'?'active':''}">Join a room</button></div><h2>${mode==='create'?'Your journey starts here.':'Someone is waiting for you.'}</h2><form id="setup-form">${mode==='join'?'<label class="field">Room code<input id="room-code" class="code-input" maxlength="6" minlength="6" placeholder="ABC123" required autocomplete="off"></label>':''}<label class="field">Your name<input id="name" maxlength="28" placeholder="What should we call you?" required autocomplete="given-name"></label><label class="field">Your city<input id="city" list="cities" placeholder="Start typing a city…" required autocomplete="off"><datalist id="cities">${cities.map(c=>`<option value="${esc(c[0])}"></option>`).join('')}</datalist></label><details class="custom-location"><summary>My city isn’t listed</summary><p class="hint">Keep your city name above and enter its approximate city-center coordinates.</p><div class="coordinates"><label class="field">Latitude<input id="lat" type="number" min="-90" max="90" step="any" placeholder="19.4326"></label><label class="field">Longitude<input id="lon" type="number" min="-180" max="180" step="any" placeholder="-99.1332"></label></div></details><label class="field">Your travel companion</label><div class="avatar-options" role="group" aria-label="Choose an avatar">${Object.entries(avatars).map(([key,emoji])=>`<button type="button" data-avatar="${key}" aria-label="${key}" aria-pressed="${key===selectedAvatar}" class="${key===selectedAvatar?'selected':''}">${emoji}</button>`).join('')}</div><div id="setup-error" role="alert"></div><button type="submit" class="primary wide">${mode==='create'?'Create our room':'Join the journey'}</button></form><p class="hint">No account needed. Use a voice call or the in-game chat to share your clues.</p><button type="button" class="quiet wide" id="practice-plane">Try Paper Plane solo</button><div class="local-note">Local testing: open a second browser tab to play both roles. Each tab keeps its own player seat.</div></div></section>`;
   bindMaps();
-  $('#practice-plane').onclick=async()=>{try{session=await request('/api/create',{name:$('#name').value.trim()||'You',city:'Mexico City, Mexico',lat:19.4326,lon:-99.1332,avatar:selectedAvatar,practice:true});sessionStorage.setItem('closer-session',JSON.stringify(session));connect();}catch(e){toast(e.message);}};
+  $('#practice-plane').onclick=async()=>{try{session=await request('create',{name:$('#name').value.trim()||'You',city:'Mexico City, Mexico',lat:19.4326,lon:-99.1332,avatar:selectedAvatar,practice:true});sessionStorage.setItem('closer-session',JSON.stringify(session));connect();}catch(e){toast(e.message);}};
   $('#create-tab').onclick=()=>{mode='create';renderSetup();};$('#join-tab').onclick=()=>{mode='join';renderSetup();};
   document.querySelectorAll('[data-avatar]').forEach(b=>b.onclick=()=>{selectedAvatar=b.dataset.avatar;document.querySelectorAll('[data-avatar]').forEach(e=>{e.classList.toggle('selected',e.dataset.avatar===selectedAvatar);e.setAttribute('aria-pressed',String(e.dataset.avatar===selectedAvatar));});});
   $('#setup-form').onsubmit=async e=>{
@@ -39,22 +40,22 @@ function renderSetup(){
     try{
       const city=$('#city').value.trim();const match=cities.find(c=>c[0].toLowerCase()===city.toLowerCase());
       let lat,lon;if(match){[,lat,lon]=match;}else{if(!$('#lat').value||!$('#lon').value)throw Error('Select a city from the list, or open “My city isn’t listed” and enter its coordinates.');lat=Number($('#lat').value);lon=Number($('#lon').value);}
-      session=await request('/api/'+mode,{name:$('#name').value,city:match?match[0]:city,lat,lon,avatar:selectedAvatar,code:$('#room-code')?.value});
+      session=await request(mode,{name:$('#name').value,city:match?match[0]:city,lat,lon,avatar:selectedAvatar,code:$('#room-code')?.value});
       sessionStorage.setItem('closer-session',JSON.stringify(session));connect();
     }catch(err){$('#setup-error').innerHTML=`<div class="error">${esc(err.message)}</div>`;btn.disabled=false;}
   };
 }
-async function request(path,body,auth=false){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),9000);try{const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json',...(auth?{Authorization:'Bearer '+session.token}:{})},body:JSON.stringify(body),signal:controller.signal});const data=await r.json();if(!r.ok)throw Error(data.error||'Something went wrong. Please try again.');return data;}catch(e){if(e.name==='AbortError')throw Error('The server did not respond. Your saved progress is safe; try again.');throw e;}finally{clearTimeout(timer);}}
+async function request(op,body,auth=false){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),9000);try{return await gameRequest(op,body,auth?session:null,{signal:controller.signal});}catch(e){if(e.name==='AbortError')throw Error('The server did not respond. Your saved progress is safe; try again.');throw e;}finally{clearTimeout(timer);}}
 function send(action,extra={}){
   const d={code:session.code,action,id:id(),epoch:state?.epoch,...extra};
-  const run=async()=>{try{const result=await request('/api/action',d,true);accept(result);return true;}catch(e){if(action!=='hold'&&action!=='release')toast(e.message);return false;}};
+  const run=async()=>{try{const result=await request('action',d,true);accept(result);return true;}catch(e){if(action!=='hold'&&action!=='release')toast(e.message);return false;}};
   queue=queue.then(run,run);return queue;
 }
 function connect(){
   closeMobileUI();clearAdventure();stream?.close();state=null;lastPuzzle=lastMap=lastPeople=lastMessages='';
   app.innerHTML='<div class="card"><h2>Finding your little journey…</h2><p class="note">Connecting to your room.</p><button class="quiet" id="reset-connection">Return to setup</button></div>';
   $('#reset-connection').onclick=leave;
-  stream=new EventSource('/api/events?'+new URLSearchParams({code:session.code,token:session.token}));
+  stream=subscribe(session);
   stream.onopen=()=>{connected=true;updateConnection();};
   stream.onmessage=e=>{connected=true;accept(JSON.parse(e.data));};
   stream.onerror=()=>{connected=false;endHold();clearAdventure();updateConnection();if(!state&&$('#reset-connection')){const note=$('.note');if(note)note.textContent='Cannot reach this room. Check that the server is running, or return to setup if the room expired.';}};
