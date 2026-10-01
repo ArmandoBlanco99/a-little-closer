@@ -1,6 +1,7 @@
 """Full UI journey against a separate, restartable server and disposable database.
 
-Run: py -3 -m tests.test_journey (installed Chrome/Edge required, about 3 minutes).
+Run: py -3 -m tests.test_journey (installed Chrome/Edge required).
+Use --netlify after npm run build to test the packaged function and local Blobs.
 Only observes browser snapshots; all gameplay actions go through UI controls.
 No chapter injection, clock changes, database edits, or download interception.
 """
@@ -30,6 +31,15 @@ OBSERVE = """
 window.browserErrors=[];
 window.addEventListener('error',e=>browserErrors.push(e.message));
 window.addEventListener('unhandledrejection',e=>browserErrors.push(String(e.reason)));
+const originalFetch=window.fetch;
+window.fetch=async(...args)=>{
+  const response=await originalFetch(...args);
+  if(String(args[0]).includes('/.netlify/functions/game')&&response.ok){
+    const data=await response.clone().json();
+    if(data.phase&&(!window.latestSnapshot||data.version>=window.latestSnapshot.version))window.latestSnapshot=data;
+  }
+  return response;
+};
 const NativeEventSource=window.EventSource;
 window.EventSource=class extends NativeEventSource {
   constructor(...args){super(...args);this.addEventListener('message',e=>window.latestSnapshot=JSON.parse(e.data));}
@@ -63,6 +73,7 @@ def fly(pages, step):
     pilot.evaluate("document.querySelector('#adventure-board').focus()")
     steering = 0
     deadline = time.monotonic()+130
+    reported = 0
     try:
         while time.monotonic() < deadline:
             s = snapshot(pilot)
@@ -70,6 +81,9 @@ def fly(pages, step):
                 print(f'PASS: flight {step+1}, real-time UI steering and cooperative firing', flush=True)
                 return
             a = s['adventure']
+            if time.monotonic() - reported > 10:
+                print(f"Flight {step+1}: {int(a['x'])}/{a['length']}, paused={s['paused']}", flush=True)
+                reported = time.monotonic()
             if not a['running']:
                 pilot.click('#launch-flight')
             stamp = next((x for x in a['stamps'] if not x['got'] and x['x'] > a['x']-25), None)
@@ -83,7 +97,7 @@ def fly(pages, step):
                     key = 'ArrowDown' if direction > 0 else 'ArrowUp'
                     pilot.call('Input.dispatchKeyEvent', type='keyDown', key=key, code=key)
                 steering = direction
-            gunner.evaluate("document.querySelector('#fire-pellet')?.click()")
+            gunner.evaluate("document.querySelector('#fire-pellet')?.click(); true")
             if any(not o['gone'] and 0 < o['x']-a['x'] < 100 and abs(o['y']-a['y']) < 60 for o in a['objects']):
                 gunner.evaluate("document.querySelector('#flight-shield')?.click()")
             time.sleep(.12)
@@ -127,6 +141,7 @@ def navigate(pages, player, target):
 
 
 def main():
+    netlify = '--netlify' in sys.argv
     browser = next((str(p) for p in [Path(r'C:\Program Files\Google\Chrome\Application\chrome.exe'),
         Path(r'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe')] if p.is_file()), None)
     browser = browser or shutil.which('google-chrome') or shutil.which('chromium')
@@ -142,8 +157,8 @@ def main():
             sock.bind(('127.0.0.1', 0)); port = sock.getsockname()[1]
         base = f'http://127.0.0.1:{port}'
         def start_server():
-            proc = subprocess.Popen([sys.executable, '-u', str(APP/'server.py'), '--host', '127.0.0.1',
-                '--port', str(port), '--db', str(temp/'test.sqlite3')], cwd=ROOT,
+            command = [shutil.which('node') or 'node', str(ROOT/'tests/netlify/local-server.mjs'), str(port), str(temp/'netlify')] if netlify else [sys.executable, '-u', str(APP/'server.py'), '--host', '127.0.0.1', '--port', str(port), '--db', str(temp/'test.sqlite3')]
+            proc = subprocess.Popen(command, cwd=ROOT,
                 stdout=server_log, stderr=subprocess.STDOUT,
                 creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
             deadline = time.monotonic()+12
@@ -233,6 +248,7 @@ def main():
             saved = snapshot(a)['adventure']['positions']
             server_process.terminate();server_process.wait(timeout=10)
             a.wait("document.querySelector('#network-status').textContent.includes('Reconnecting')", 12)
+            if netlify: time.sleep(7)  # Serverless rooms pause on missed heartbeats, not cold starts.
             server_process = start_server()
             for p in [a, b]: p.wait("latestSnapshot.paused&&!!document.querySelector('#ready')", 20)
             assert snapshot(a)['adventure']['positions'] == saved
@@ -271,7 +287,7 @@ def main():
             # Miles in one tab must not alter the shared souvenir's canonical kilometre distance.
             b.click('#units')
             a.click('#heart');b.wait("document.querySelector('.couple').classList.contains('reacting')")
-            output = ROOT/'artifacts';output.mkdir(exist_ok=True)
+            output = ROOT/'artifacts'/('netlify' if netlify else 'python');output.mkdir(parents=True, exist_ok=True)
             downloads = []
             for i, p in enumerate([a, b]):
                 folder = temp/f'download-{i}';folder.mkdir()

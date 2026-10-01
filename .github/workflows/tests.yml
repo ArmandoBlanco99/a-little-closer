@@ -40,3 +40,24 @@ jobs:
       # The standard Ubuntu x64 runner includes Google Chrome.
       - run: make test-browser PYTHON=python
       - run: make test-journey PYTHON=python
+
+  netlify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npm run test:package
+      - run: python -m tests.test_journey --netlify
+      - run: npm run package
