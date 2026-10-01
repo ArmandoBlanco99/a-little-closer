@@ -9,6 +9,8 @@ The user selected Netlify Free, with four cooperative chapters and the shared en
 
 Edit frontend source in `a-little-closer/public/`. The `dist/` folder is generated and replaced by each build.
 
+Basic lint: `make lint-setup` installs the pinned Ruff version locally; `make lint` runs Python lint plus JavaScript syntax checks. Configuration lives in `ruff.toml` and `requirements-dev.txt`. `make lint-fix` applies safe Ruff fixes only. CI checks Python on both supported versions and platforms, and JavaScript in the Netlify job. No broad formatting rewrite is required.
+
 On Windows, Make uses the portable Node 22 installation under `.tools/` when present and adds it to child-process PATH. Otherwise it uses the installed `npm.cmd`; other platforms use `npm`. The portable runtime is excluded from the upload ZIP. Uploading the already generated ZIP requires no local Node installation.
 
 Run `npm ci`, `npm test`, `npm run build`, `npm run test:package`, and `python -m tests.test_journey --netlify` to verify. `npm run package` creates the source ZIP for signed-in Netlify Drop builds. Node 22.12+ in the 22.x line is required for developer builds, not for users uploading the ZIP. Helpers and test-emulator adaptations must never enter the browser publish folder. Keep both rule implementations covered when changing gameplay. See DEPLOYMENT.md for expiry, costs, architecture, and hosted-test limits.

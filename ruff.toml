@@ -1,0 +1,7 @@
+target-version = "py310"
+extend-exclude = [".tools", "artifacts", "dist", "node_modules", ".netlify"]
+
+[lint]
+# Start with correctness and import checks; preserve the existing compact style.
+select = ["E4", "E7", "E9", "F"]
+ignore = ["E701", "E702"]

@@ -16,3 +16,4 @@ node_modules/
 dist/
 *.log
 netlify-ready-game.zip
+.ruff_cache/

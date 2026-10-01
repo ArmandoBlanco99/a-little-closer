@@ -1,0 +1,2 @@
+# Optional development tooling; not needed to run or deploy the game.
+ruff==0.16.10

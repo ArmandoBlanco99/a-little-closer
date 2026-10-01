@@ -1,5 +1,9 @@
 # Local verification
 
+## Lint tooling — October 1, 2026
+
+`make lint` passes with pinned Ruff 0.16.10 and JavaScript syntax checks across 19 source files. Ruff covers the Python application and tests, using E4/E7/E9/F rules with existing compact statements allowed. CI runs both checks; `make check` includes Python lint. The fixes remove an unused import and variable, replace an assigned lambda with a function, and explicitly initialize the browser test's room code. Developer lint configuration and requirements are included in the upload ZIP; caches and installed tools are excluded.
+
 ## Netlify migration — September 30, 2026
 
 The deployment target now preserves four cooperative chapters and the shared ending, as requested. No competitive scoring or individual winner was added.
@@ -9,7 +13,7 @@ The deployment target now preserves four cooperative chapters and the shared end
 | Serverless rules and storage contract | `npm test`: 7 passing tests. Complete two-player journey, both solo practice flights, shared completion data, private clues/tokens, concurrent admission/actions, deduplication, conflict retries, missing-ETag rejection, validation, expiry, authoritative flight timing, disconnect and cold-instance recovery. |
 | Production build | `npm run build`: browser assets in `dist` and one standard `game` function packaged by Netlify's official bundler, targeting Node 22. No custom route or redirect. |
 | Actual function archive | `npm run test:package`: extracted compiled function invoked with the real Blobs SDK and disposable official local storage. Concurrent ready/chat actions and saved data after a runtime restart pass. Production browser code calls `/.netlify/functions/game` directly. |
-| Upload ZIP | Fresh extraction, `npm ci`, production build, and packaged-function checks all pass. The archive contains 45 source files with root configuration and lockfile; no dependencies, saves, caches, logs, or generated output. Its files match the workspace source. |
+| Upload ZIP | Fresh extraction, `npm ci`, production build, and packaged-function checks all pass. The archive contains project source with root configuration and lockfile; no dependencies, saves, caches, logs, or generated output. Its files match the workspace source. |
 | Full production browser journey | `py -3 -m tests.test_journey --netlify`: passing. Two browser seats drive both flights, all three lantern trails, all three bridge mazes and all three constellation reveals through UI controls. Checks third-seat rejection, Unicode profiles, chat, chapter progress, genuine page departure and server restart, and identical 1600 x 1100 postcards downloaded by both players. No captured browser errors. |
 | Local Python compatibility | 24 regression tests and the Chrome browser smoke suite pass after the shared frontend transport extraction. Existing local SQLite data is untouched. |
 

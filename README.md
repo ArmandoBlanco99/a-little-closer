@@ -36,6 +36,11 @@ From the repository root, use `make help` to list commands. GNU Make selects `py
 | `make test-netlify` | Build and test the serverless rules and actual function archive. |
 | `make test-netlify-journey` | Complete browser journey against the packaged function. |
 | `make package` | Build, check, and create the complete Netlify upload ZIP. |
+| `make lint-setup` | Install pinned Ruff in the ignored workspace tools folder. |
+| `make lint` | Run Ruff on Python and syntax checks on JavaScript source. |
+| `make lint-fix` | Apply Ruff's safe Python fixes; review the resulting diff. |
+
+Run `make lint-setup` once before the Python lint checks. `make lint` also needs Node 22, using the workspace's portable installation when available. `make lint-python` and `make lint-js` run each check separately. Ruff checks correctness and imports while preserving the existing compact statement style; see [Ruff configuration](https://docs.astral.sh/ruff/configuration/). JavaScript checks parse source without executing it; the Netlify build compiles the TypeScript function. `make check` includes Python lint, and CI runs both lint checks. These optional developer tools are not required to play or upload the game.
 
 Use `make lan PORT=55018` to request a port; if unavailable, read the actual port printed by the server.
 

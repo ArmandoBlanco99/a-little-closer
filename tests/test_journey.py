@@ -8,7 +8,6 @@ No chapter injection, clock changes, database edits, or download interception.
 import base64
 from collections import deque
 import json
-import os
 from pathlib import Path
 import shutil
 import socket
@@ -197,6 +196,7 @@ def main():
             b.wait("document.querySelector('#setup-error').textContent.includes('coordinates')")
             profiles = [dict(name='María-José Éléonore 東京 Müller', city='San Cristóbal de las Casas — región histórica de Chiapas, México', lat=16.737, lon=-92.637),
                         dict(name='François Zoë 京都 García-López', city='東京都千代田区 — Tokyo, Japan', lat=35.681, lon=139.768)]
+            code = None
             for i, p in enumerate([a, b]):
                 if i: p.click('#join-tab')
                 p.evaluate(f"Object.entries({json.dumps(profiles[i])}).forEach(([k,v])=>document.querySelector('#'+k).value=v);document.querySelector('.custom-location').open=true")

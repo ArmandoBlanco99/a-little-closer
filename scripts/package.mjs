@@ -11,6 +11,8 @@ const roots = [
   "netlify.toml",
   ".gitignore",
   "Makefile",
+  "ruff.toml",
+  "requirements-dev.txt",
   "README.md",
   "DEVELOPMENT.md",
   "DEPLOYMENT.md",

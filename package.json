@@ -7,6 +7,7 @@
     "node": "22.x"
   },
   "scripts": {
+    "lint": "node scripts/lint-js.mjs",
     "build": "node scripts/build.mjs",
     "test": "node --test tests/netlify/*.test.mjs",
     "test:package": "node scripts/check-package.mjs",

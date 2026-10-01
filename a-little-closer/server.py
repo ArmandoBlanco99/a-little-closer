@@ -104,7 +104,7 @@ def new_puzzle(r):
     if r.get('edition') == 2:
         adventures.new(r)
         return
-    n, step = r['stage'], r['step']
+    n = r['stage']
     if n == 0:
         r['secret'] = {'target': secrets.SystemRandom().sample(SYMBOLS, 4)}
         r['placed'] = []

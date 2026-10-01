@@ -28,7 +28,8 @@ def garden_layout(step, player):
         [[0,3],[0,2],[1,2],[1,1],[2,1],[2,2],[2,3],[3,3],[4,3],[4,4],[5,4],[5,5],[6,5],[6,4],[6,3]],
     ]
     path = paths[step]
-    mirror = lambda c: [c[0], 6-c[1]] if player else list(c)
+    def mirror(c):
+        return [c[0], 6-c[1]] if player else list(c)
     return dict(path=[mirror(c) for c in path],
                 switch=mirror([2,1]) if step else None,
                 gate=[3,3] if step else None,
